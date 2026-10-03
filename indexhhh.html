@@ -1,0 +1,45 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>همس الأرق</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial}canvas{display:block}#ui{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 5px #000}#hud{position:absolute;top:15px;right:15px}#msg{position:absolute;bottom:18%;width:100%;text-align:center;font-size:18px}#cross{position:absolute;left:50%;top:50%}#joy{pointer-events:auto;position:absolute;left:20px;bottom:25px;width:120px;height:120px;border:1px solid #777;border-radius:50%;background:#fff2}.k{position:absolute;left:55px;top:35px;width:50px;height:50px;border-radius:50%;background:#fff4}.btn{pointer-events:auto;position:absolute;bottom:35px;right:15px;padding:12px;border:1px solid #aaa;border-radius:10px;background:#111;color:#fff}.b2{right:95px}#start{position:fixed;inset:0;background:#050505;z-index:5;display:flex;align-items:center;justify-content:center;text-align:center}.panel{max-width:400px;padding:25px}.panel button{padding:14px 28px;background:#222;color:#fff;border:1px solid #aaa;border-radius:10px;font-size:18px}
+</style></head><body><div id="start"><div class="panel"><h1>همس الأرق</h1><p>3:33 صباحاً<br>لا تشعل النور الكامل... إنه يسمع الضوء قبل الصوت.</p><button onclick="begin()">ابدأ اللعبة</button></div></div><div id="ui"><div id="hud">الكشاف: 80%<br>الهدف: خذ الكشاف والرسالة</div><div id="cross">+</div><div id="msg"></div><div id="joy"><div class="k"></div></div><button class="btn" onclick="interact()">تفاعل</button><button class="btn b2" onclick="flash()">🔦</button></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+let s,c,r,light,monster,phase=0,bat=80,joy={x:0,y:0},yaw=0,pitch=0,down=false,lastX,lastY;
+const msg=t=>document.getElementById('msg').textContent=t,setGoal=t=>document.getElementById('hud').innerHTML=t;
+function box(x,y,z,w,h,d,col){let q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:col}));q.position.set(x,y,z);s.add(q);return q}
+function begin(){document.getElementById('start').style.display='none';init()}
+function init(){
+s=new THREE.Scene();s.background=new THREE.Color(0x020202);s.fog=new THREE.Fog(0x020202,1,18);
+c=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.05,50);c.position.set(0,1.6,5);
+r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);document.body.appendChild(r.domElement);
+s.add(new THREE.HemisphereLight(0x555555,0x000000,.12));
+light=new THREE.SpotLight(0xffffff,0,14,Math.PI/7,.7);s.add(light);s.add(light.target);
+let w=new THREE.MeshStandardMaterial({color:0x29262a}),f=new THREE.MeshStandardMaterial({color:0x151316});
+box(0,0,-2,12,.2,14,0x151316);box(-6,2,-2,.3,4,14,0x29262a);box(6,2,-2,.3,4,14,0x29262a);box(0,2,-9,12,4,.3,0x29262a);box(0,2,4.5,12,4,.3,0x29262a);
+box(-3,2,1,.25,4,7,0x29262a);box(3,2,1,.25,4,7,0x29262a);box(-4.5,.7,2,2.4,1,3,0x3b3540);box(-2.9,.6,2.8,.8,1,0.8,0x302a25);box(0,.7,-.5,3.2,1,1.1,0x303038);box(0,1.8,-7.7,1.2,1.7,.25,0x414141);box(1.4,1.15,-.8,.3,.45,.3,0xaaaeb5);box(2.8,2,-8.75,1.6,3.5,.18,0x1c1717);
+monster=new THREE.Mesh(new THREE.CapsuleGeometry(.45,2.4,6,12),new THREE.MeshStandardMaterial({color:0x050505}));monster.position.set(0,1.8,-5);s.add(monster);
+msg('مرة ثانية... نفس الوقت...',3000);loop()
+}
+function msg(t,n){msg=t;document.getElementById('msg').textContent=t;setTimeout(()=>{if(document.getElementById('msg').textContent===t)document.getElementById('msg').textContent=''},n||2500)}
+function flash(){light.intensity=light.intensity?0:4}
+function interact(){
+if(phase===0){phase=1;setGoal('الكشاف: 80%<br>الهدف: اخرج إلى الصالة');msg('لا تشعل النور الكامل... إنه يسمع الضوء قبل الصوت.');return}
+if(phase===1){phase=2;setGoal('الكشاف: 80%<br>الهدف: أعد تشغيل القاطع');msg('القاطع... لازم أشغل الكهرباء.');return}
+if(phase===2&&c.position.z<-5.5){phase=3;setGoal('الكشاف: 80%<br>الهدف: صِل السلكين خلال 5 ثوانٍ');msg('وصل السلكين بسرعة!');setTimeout(()=>{if(phase===3){phase=4;setGoal('الكشاف: 80%<br>الهدف: اذهب إلى باب القبو');msg('تم توصيل السلك الأخير...');}},5000);return}
+if(phase===4&&c.position.z<-7){phase=5;setGoal('الهدف: ادخل القبو');msg('هذا مجرد البداية...');return}
+if(phase===5)msg('المرحلة الثانية قريباً...')
+}
+function loop(){
+requestAnimationFrame(loop);let dt=.016;
+let sp=1.6;c.position.x+=joy.x*sp*dt;c.position.z+=joy.y*sp*dt;c.position.x=Math.max(-5.3,Math.min(5.3,c.position.x));c.position.z=Math.max(-8.3,Math.min(3.8,c.position.z));c.rotation.set(pitch,yaw,0,'YXZ');
+light.position.copy(c.position);light.target.position.set(c.position.x,1,c.position.z-3);
+if(light.intensity){bat-=dt*1.5;document.getElementById('hud').innerHTML=document.getElementById('hud').innerHTML.replace(/الكشاف:.*?<br>/,'الكشاف: '+Math.max(0,Math.floor(bat))+'%<br>');if(bat<=0)light.intensity=0}
+if(phase>=2&&phase<4){monster.lookAt(c.position);monster.position.lerp(c.position,.002);if(monster.position.distanceTo(c.position)<.9){msg('سمعك... انتهت اللعبة');phase=0}}
+r.render(s,c)
+}
+let z=document.getElementById('joy'),k=z.firstElementChild;
+z.ontouchmove=e=>{let q=z.getBoundingClientRect(),t=e.touches[0],x=t.clientX-q.left-60,y=t.clientY-q.top-60,l=Math.hypot(x,y)||1;x/=Math.max(45,l);y/=Math.max(45,l);joy={x:x*Math.min(1,l/45),y:y*Math.min(1,l/45)};k.style.transform='translate('+joy.x*35+'px,'+joy.y*35+'px)'};
+z.ontouchend=()=>{joy={x:0,y:0};k.style.transform=''};
+document.body.ontouchmove=e=>{if(e.target===z||e.target===k)return;if(lastX!=null){yaw-=(e.touches[0].clientX-lastX)*.004;pitch-=(e.touches[0].clientY-lastY)*.003;pitch=Math.max(-1.1,Math.min(1.1,pitch))}lastX=e.touches[0].clientX;lastY=e.touches[0].clientY};
+document.body.ontouchend=()=>{lastX=lastY=null}; 
+</script></body></html>
